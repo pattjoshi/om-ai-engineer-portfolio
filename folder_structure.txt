@@ -1,0 +1,58 @@
+.
+├── assets
+│   └── readme-photo.png
+├── components.json
+├── eslint.config.mjs
+├── folder_structure.txt
+├── LICENSE
+├── next-env.d.ts
+├── next.config.ts
+├── package.json
+├── pnpm-lock.yaml
+├── postcss.config.mjs
+├── public
+│   ├── avatar-landing.png
+│   ├── favicon.svg
+│   ├── final_memojis_ios.mp4
+│   ├── final_memojis.webm
+│   ├── landing-memojis.png
+│   ├── logo-yuvi.svg
+│   ├── Plant_disease_detectionwebsite.png
+│   ├── profile-yuvi-03.jpeg
+│   ├── profile-yuvi.jpg
+│   ├── Resume_Yuvraj_Singh_AI.pdf
+│   └── Resume_Yuvraj_Singh_AI.png
+├── README.md
+├── SETUP_INSTRUCTIONS.md
+├── src
+│   ├── app
+│   │   ├── api
+│   │   ├── chat
+│   │   ├── glob.css
+│   │   ├── globals.css
+│   │   ├── layout.tsx
+│   │   └── page.tsx
+│   ├── components
+│   │   ├── chat
+│   │   ├── contact.tsx
+│   │   ├── crazy.tsx
+│   │   ├── FluidCursor.tsx
+│   │   ├── InternshipCard.tsx
+│   │   ├── magicui
+│   │   ├── photos.tsx
+│   │   ├── presentation.tsx
+│   │   ├── projects
+│   │   ├── resume.tsx
+│   │   ├── skills.tsx
+│   │   ├── sport.tsx
+│   │   ├── theme-provider.tsx
+│   │   ├── ui
+│   │   └── welcome-modal.tsx
+│   ├── hooks
+│   │   ├── use-FluidCursor.tsx
+│   │   └── use-outside-click.tsx
+│   └── lib
+│       └── utils.ts
+└── tsconfig.json
+
+14 directories, 42 files
