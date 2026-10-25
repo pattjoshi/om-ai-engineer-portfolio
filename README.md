@@ -1,12 +1,11 @@
 <div align="center">
 
   <br />
-  <p>
-    <a href="https://www.yuvis.me"><img src="assets/readme-photo.png" alt="AI Portfolio Banner" width="100%"/></a>
-  </p>
+  <img src="public/avatar-om-face-v2.webp" alt="Om Prakash Pattjoshi" width="160"/>
   <br />
 
-  <h1>🌐 World's First AI-Native Portfolio 🤖✨</h1>
+  <h1>🤖 Om Prakash Pattjoshi — AI-Native Portfolio</h1>
+  <p>An interactive portfolio where an AI avatar answers questions about me in real time.</p>
 </div>
 
 ---
@@ -14,141 +13,121 @@
 ### **Badges**
 
 <p align="center">
-  <img src="https://img.shields.io/github/repo-size/yuvraj0412s/Yuvi_portfolio?style=for-the-badge" alt="Repo Size">
-  <img src="https://img.shields.io/github/license/yuvraj0412s/Yuvi_portfolio?style=for-the-badge" alt="License">
+  <img src="https://img.shields.io/github/repo-size/pattjoshi/om-ai-engineer-portfolio?style=for-the-badge" alt="Repo Size">
+  <img src="https://img.shields.io/github/license/pattjoshi/om-ai-engineer-portfolio?style=for-the-badge" alt="License">
   <a href="https://nextjs.org/"><img src="https://img.shields.io/badge/Next.js-000000?style=for-the-badge&logo=nextdotjs&logoColor=white" alt="Next.js"></a>
   <a href="https://vercel.com/"><img src="https://img.shields.io/badge/Vercel-000000?style=for-the-badge&logo=vercel&logoColor=white" alt="Deployment"></a>
-  <a href="https://openai.com/"><img src="https://img.shields.io/badge/OpenAI-412991?style=for-the-badge&logo=openai&logoColor=white" alt="OpenAI API"></a>
   <a href="https://mistral.ai/"><img src="https://img.shields.io/badge/Mistral-FF7E00?style=for-the-badge&logo=mistralai&logoColor=white" alt="Mistral API"></a>
-  <a href="https://github.com/yuvraj0412s/Yuvi_portfolio/stargazers"><img src="https://img.shields.io/github/stars/yuvraj0412s/Yuvi_portfolio?style=for-the-badge&color=ffd700" alt="Repo Stars"></a>
-  <a href="https://github.com/yuvraj0412s/Yuvi_portfolio/graphs/contributors"><img src="https://img.shields.io/github/contributors/yuvraj0412s/Yuvi_portfolio?style=for-the-badge&color=ff69b4" alt="Contributors"></a>
+  <a href="https://groq.com/"><img src="https://img.shields.io/badge/Groq-F55036?style=for-the-badge" alt="Groq API"></a>
 </p>
 
 ---
 
 ### **About The Project** 💡
 
-Static portfolios are a thing of the past. They present a one-sided, lifeless view of a developer's journey. I decided to build **[yuvis.me](https://www.yuvis.me)** to break that mold.
-
-This project is an **AI-powered, interactive portfolio** that transforms the "About Me" page into a dynamic, engaging conversation. Instead of forcing recruiters, developers, and friends to scroll endlessly through information, it invites them to ask questions and receive answers tailored specifically to them.  
-
-It’s a portfolio that doesn't just show—it communicates.
+Static portfolios are a thing of the past — a one-sided, lifeless view of a developer's journey. This is an **AI-powered, interactive portfolio** where visitors don't scroll through a wall of text; they ask questions and get answers tailored to them, voiced by an AI avatar that knows my background, skills, and projects.
 
 ---
 
 ### **Features** ✨
 
-*   **🗣️ Interactive AI Avatar:** Engage in real-time conversation. Ask anything from my tech stack to my hobbies and get instant, context-aware answers.
-*   **🧠 Context-Aware Engine:** The AI's personality and responses adapt based on who it's talking to—whether you're a recruiter, a fellow developer, or a friend.
-*   **🎨 Dynamic & Responsive UI:** A sleek, modern interface built with TailwindCSS and brought to life with Framer Motion animations.
-*   **🚀 Built for Everyone:** Crafted to provide a unique experience for tech recruiters, potential collaborators, and curious friends alike.
-*   **💬 No More Boring Bios:** This portfolio talks *back*.
+- **🗣️ Interactive AI Avatar** — Ask anything about my experience, skills, or projects and get real, context-aware answers (Mistral primary, Groq fallback).
+- **⚡ Smart small-talk shortcut** — Trivial messages ("hi", "thanks", "bye") get an instant canned reply with **zero LLM calls**, keeping API costs down.
+- **👀 Eye-tracking avatar** — The hero avatar's pupils follow your cursor, a lightweight 2D "googly eyes" effect, no 3D engine required.
+- **🖱️ Custom cursor** — A soft glowing dot/ring that lags the real cursor and shifts color over interactive elements (disabled automatically on touch devices).
+- **🎵 Generative ambient music** — A toggleable background soundtrack synthesized live in the browser via the Web Audio API (no audio file, infinitely evolving, zero licensing risk).
+- **🧲 Magnetic buttons & 3D tilt cards** — Buttons gently pull toward the cursor; project cards tilt in 3D on hover.
+- **🛡️ Production-hardened** — Rate-limited chat API, cached Spotify token exchange, proper `error.tsx`/`not-found.tsx` boundaries, and optimized/compressed images throughout.
 
 ---
 
 ### **Tech Stack** 🛠️
 
-| **Category**      | **Technology**                                                                                                        |
-| ----------------- | --------------------------------------------------------------------------------------------------------------------- |
-| **Frontend**      | [Next.js](https://nextjs.org/), [React](https://reactjs.org/), [Tailwind CSS](https://tailwindcss.com/), [Framer Motion](https://www.framer.com/motion/) |
-| **Backend**       | [Node.js](https://nodejs.org/), Next.js API Routes                                                                     |
-| **AI & APIs**     | [OpenAI API](https://openai.com/), [Mistral API](https://mistral.ai/), [GitHub API](https://docs.github.com/en/rest)      |
-| **Deployment**    | [Vercel](https://vercel.com/)                                                                                         |
-| **Package Manager**| [pnpm](https://pnpm.io/)                                                                                              |
+| **Category**        | **Technology**                                                                                                         |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| **Frontend**         | [Next.js 16](https://nextjs.org/), [React 19](https://react.dev/), [Tailwind CSS](https://tailwindcss.com/), [Framer Motion](https://www.framer.com/motion/) |
+| **Backend**          | Next.js API Routes (Node.js runtime)                                                                                     |
+| **AI & APIs**        | [Mistral API](https://mistral.ai/) (primary), [Groq](https://groq.com/) (fallback), [AI SDK](https://sdk.vercel.ai/)    |
+| **Audio**            | Web Audio API (generative ambient soundtrack — no audio files)                                                          |
+| **Deployment**       | [Vercel](https://vercel.com/)                                                                                            |
+| **Package Manager**  | [pnpm](https://pnpm.io/)                                                                                                 |
 
 ---
 
 ### **Installation & Usage** 🚀
 
-Want to get this project running on your local machine? Follow these simple steps.
-
 #### **Prerequisites**
--   Node.js (v18 or higher)
--   pnpm package manager
--   Mistral API Token
--   GitHub API Token
+- Node.js (v18 or higher)
+- pnpm package manager
+- A Mistral API key (and optionally a Groq key as fallback)
 
 #### **Local Setup**
 
-1.  **Clone the repository:**
+1. **Clone the repository:**
     ```sh
-    git clone https://github.com/yuvraj0412s/Yuvi_portfolio.git
-    cd Yuvi_portfolio
+    git clone https://github.com/pattjoshi/om-ai-engineer-portfolio.git
+    cd om-ai-engineer-portfolio
     ```
 
-2.  **Install dependencies:**
+2. **Install dependencies:**
     ```sh
     pnpm install
     ```
 
-3.  **Set up your environment variables:**
-    Create a `.env.local` file in the root of your project and add the following keys:
+3. **Set up your environment variables:**
+    Copy `.env.example` to `.env.local` and fill in:
     ```env
     MISTRAL_API_KEY="your_mistral_api_key_here"
-    GITHUB_TOKEN="your_github_token_here"
-    SPOTIFY_CLIENT_ID="your_spotify_client_id"
-    SPOTIFY_CLIENT_SECRET="your_spotify_client_secret"
-    SPOTIFY_REFRESH_TOKEN="your_spotify_refresh_token"
+    GROQ_API_KEY="your_groq_api_key_here"   # optional fallback
+    GITHUB_TOKEN="your_github_token_here"    # optional, raises GitHub API rate limits
 
-    # Optional model overrides (defaults shown)
-    # MISTRAL_MODEL="mistral-small-latest"
-    GROQ_API_KEY="your_groq_api_key_here"
-    # GROQ_MODEL="openai/gpt-oss-20b"
+    # Optional: Spotify "now playing" widget
+    SPOTIFY_CLIENT_ID=""
+    SPOTIFY_CLIENT_SECRET=""
+    SPOTIFY_REFRESH_TOKEN=""
     ```
-    *   Get your Mistral API Key from [admin.mistral.ai](https://admin.mistral.ai/organization/api-keys) — **primary AI provider**.
-    *   Get your Groq API Key from [console.groq.com](https://console.groq.com) — **fallback provider** (used when Mistral is temporarily unavailable, e.g. HTTP 429).
-    *   Generate your GitHub Token at [github.com/settings/tokens](https://github.com/settings/personal-access-tokens).
+    - Get a Mistral API key from [admin.mistral.ai](https://admin.mistral.ai/organization/api-keys) — **primary AI provider**.
+    - Get a Groq API key from [console.groq.com](https://console.groq.com) — **fallback provider**, used automatically if Mistral is unavailable.
+    - All keys are server-side only, never exposed to the client.
 
-    **AI provider order:** Mistral (`mistral-small-latest`) → Groq (`openai/gpt-oss-20b`). The fallback is transparent to visitors. `MISTRAL_MODEL` and `GROQ_MODEL` are optional. All keys are server-side only — never `NEXT_PUBLIC_*`.
-
-4.  **Run the development server:**
+4. **Run the development server:**
     ```sh
     pnpm dev
     ```
 
-5.  **Open your browser** and navigate to `http://localhost:3000`.
+5. **Open your browser** at `http://localhost:3000`.
+
+#### **Production build**
+```sh
+pnpm build
+pnpm start
+```
 
 ---
 
-### **Contributing** 🤝
+### **Deployment** ☁️
 
-Contributions are what make the open-source community such an amazing place to learn, inspire, and create. Any contributions you make are **greatly appreciated**.
-
-1.  **Fork** the Project.
-2.  Create your Feature Branch (`git checkout -b feature/AmazingFeature`).
-3.  Commit your Changes (`git commit -m 'Add some AmazingFeature'`).
-4.  Push to the Branch (`git push origin feature/AmazingFeature`).
-5.  Open a **Pull Request**.
-
-Please feel free to open an issue if you find a bug or have a feature suggestion.  
-For security issues, see [SECURITY.md](.github/SECURITY.md).
-
----
-
-### **Roadmap** 🗺️
-
--   [ ] Add more AI personality "modes"
--   [ ] Integrate a project showcase with live demos
--   [ ] Implement a light/dark theme toggle
--   [ ] Add multilingual support for the AI chat
+Deployed on [Vercel](https://vercel.com/new) — import this repo, add the environment variables above in the project settings, and deploy. No special build configuration needed.
 
 ---
 
 ### **License** 📄
 
-This project is open-sourced under the **MIT License**. See the [LICENSE](LICENSE) file for more information.
+This project is open-sourced under the **MIT License**. See the [LICENSE](LICENSE) file for details.
 
 ---
 
 ### **Contact & Links** 🔗
 
-**Yuvraj Singh** - Let's connect!
+**Om Prakash Pattjoshi** — GenAI Engineer | LLM Engineer | Full Stack AI Developer
 
 <div align="center">
 
-[![Portfolio](https://img.shields.io/badge/Live_Demo-yuvis.me-2ea44f?style=for-the-badge&logo=vercel)](https://www.yuvis.me)
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-0A66C2?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/om-prakash-pattjoshi-/)
 &nbsp;
-[![LinkedIn](https://img.shields.io/badge/LinkedIn-0A66C2?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/yuvraj-singh-77601827a/)
+[![GitHub](https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/pattjoshi)
+&nbsp;
+[![Email](https://img.shields.io/badge/Email-omprakashpattjoshi123%40gmail.com-D14836?style=for-the-badge&logo=gmail&logoColor=white)](mailto:omprakashpattjoshi123@gmail.com)
 
 </div>
 
@@ -156,4 +135,4 @@ This project is open-sourced under the **MIT License**. See the [LICENSE](LICENS
 
 ### **Tags**
 
-`#AIPortfolio` `#NextJS` `#React` `#Portfolio` `#Vercel` `#OpenAI` `#MistralAI` `#DeveloperPortfolio` `#WebDevelopment` `#InteractiveUI`
+`#AIPortfolio` `#NextJS` `#React` `#Portfolio` `#Vercel` `#MistralAI` `#Groq` `#GenAI` `#LLMEngineer` `#WebDevelopment`
