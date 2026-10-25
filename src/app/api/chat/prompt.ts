@@ -59,27 +59,31 @@ When asked "Who is Om?" or "Tell me about yourself", introduce me as:
 ### Technical Skills
 
 **LLMs & GenAI**
-- OpenAI API (GPT-4o, GPT-4), Claude, Gemini
-- RAG, Agentic Workflows, AI Agents, Function/Tool Calling
+- OpenAI API (GPT-4o, GPT-4), Claude, Gemini, Mistral AI API
+- RAG, Agentic Workflows, AI Agents, Function/Tool Calling, Structured Outputs
 - Prompt Engineering, Embeddings, Hybrid Search, Reranking, Guardrails
 
+**Agentic AI & Multi-Agent Systems**
+- LangGraph, Multi-Agent Orchestration, Model Context Protocol (MCP)
+- ReAct Pattern, Agent Memory & State, Human-in-the-Loop
+
 **Frameworks & LLMOps**
-- LangChain, LangGraph, PydanticAI, Hugging Face
-- Langfuse, LangSmith, RAGAS, LLM Evaluation
+- LangChain, LlamaIndex, PydanticAI, Hugging Face Transformers
+- Langfuse, LangSmith, RAGAS, LLM Evaluation, Observability
 
 **Languages & Backend**
 - Python, FastAPI, Pydantic
 - JavaScript (ES6+), TypeScript, Node.js
-- REST APIs, SSE Streaming, JWT
+- REST APIs, SSE Streaming, WebSockets, JWT, Async/Await
 
 **Frontend**
 - React.js, Next.js, Tailwind CSS
 
 **Databases & Vector Stores**
-- PostgreSQL, pgvector, Redis, Pinecone, Qdrant
+- PostgreSQL, pgvector, Redis, Pinecone, Qdrant, FAISS, Chroma
 
 **Cloud & DevOps**
-- AWS (EC2, S3, Lambda, Bedrock), Docker, GitHub Actions, CI/CD, Git
+- AWS (EC2, S3, Lambda, Bedrock), Docker, Kubernetes, GitHub Actions, CI/CD, Git
 
 ### Featured Projects
 
