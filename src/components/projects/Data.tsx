@@ -19,7 +19,7 @@ const PROJECT_CONTENT: {
     title: 'LMS GenAI Assistant',
     tagline: 'A RAG-powered AI tutor that learns alongside the course.',
     description:
-      'An AI learning assistant built for a Learning Management System (LMS), built phase by phase to cover the full GenAI stack: RAG, vector and graph databases, query rewriting and routing, agentic workflows, human-in-the-loop, MCP, evaluation, guardrails, and tracing. Powers a RAG-based course Q&A assistant that answers learner questions grounded in course material with source citations, plus an AI tutor agent with LangGraph for step-by-step, course-aware explanations.',
+      'Developed an AI-powered Learning Management System (LMS) featuring role-based access for administrators, teachers, and students. The platform supports course management, assignments, attendance tracking, grading, announcements, and student progress monitoring. Integrated an intelligent chatbot powered by LangGraph and Groq, enabling users to interact with the system through natural language. Implemented 26 database tools for role-specific operations, JWT-based authentication, and protected routes. Built a responsive React and TypeScript frontend with interactive dashboards, smooth animations, notifications, and modern UI components. Developed the backend using Python, Flask, SQLAlchemy, and MySQL, with structured APIs and role-based authorization.',
     techStack: [
       'Python',
       'FastAPI',
@@ -42,7 +42,10 @@ const PROJECT_CONTENT: {
       },
     ],
     images: [
-      { src: '/projects/lms-genai-banner.webp', alt: 'LMS GenAI Assistant overview' },
+      { src: '/projects/lmsadmin.webp', alt: 'LMS GenAI Assistant ADMIN potal' },
+      { src: '/projects/lmssupport.webp', alt: 'LMS GenAI Assistant support' },
+      { src: '/projects/lmsteacher.webp', alt: 'LMS GenAI Assistant teacher' },
+      { src: '/projects/lmsstudent.webp', alt: 'LMS GenAI Assistant student' },
     ],
   },
   {
@@ -68,6 +71,10 @@ const PROJECT_CONTENT: {
     ],
     images: [
       { src: '/projects/fresherai-banner.webp', alt: 'FresherAI multi-agent architecture overview' },
+      { src: '/projects/fresherai-1.webp', alt: 'FresherAI screenshot 1' },
+      { src: '/projects/fresherai-2.webp', alt: 'FresherAI screenshot 2' },
+      { src: '/projects/fresherai-3.webp', alt: 'FresherAI screenshot 3' },
+      { src: '/projects/fresherai-4.webp', alt: 'FresherAI screenshot 4' },
     ],
   },
   {
@@ -102,6 +109,11 @@ const PROJECT_CONTENT: {
     ],
     images: [
       { src: '/projects/linkedin-extractor-banner.webp', alt: 'LinkedIn Job Post & Email Extractor overview' },
+      { src: '/projects/linkedin-extractor-1.webp', alt: 'LinkedIn Extractor screenshot 1' },
+      { src: '/projects/linkedin-extractor-2.webp', alt: 'LinkedIn Extractor screenshot 2' },
+      { src: '/projects/linkedin-extractor-3.webp', alt: 'LinkedIn Extractor popup 1' },
+      { src: '/projects/linkedin-extractor-4.webp', alt: 'LinkedIn Extractor popup 2' },
+      { src: '/projects/linkedin-extractor-5.webp', alt: 'LinkedIn Extractor popup 3' },
     ],
   },
   {
@@ -119,6 +131,12 @@ const PROJECT_CONTENT: {
     ],
     images: [
       { src: '/projects/multi-vendor-eshop-banner.webp', alt: 'Multi-Vendor E-Shop overview' },
+      { src: '/projects/multi-vendor-eshop-1.webp', alt: 'Multi-Vendor E-Shop screenshot 1' },
+      { src: '/projects/multi-vendor-eshop-2.webp', alt: 'Multi-Vendor E-Shop screenshot 2' },
+      { src: '/projects/multi-vendor-eshop-3.webp', alt: 'Multi-Vendor E-Shop screenshot 3' },
+      { src: '/projects/multi-vendor-eshop-4.webp', alt: 'Multi-Vendor E-Shop screenshot 4' },
+      { src: '/projects/multi-vendor-eshop-5.webp', alt: 'Multi-Vendor E-Shop screenshot 5' },
+      { src: '/projects/multi-vendor-eshop-6.webp', alt: 'Multi-Vendor E-Shop screenshot 6' },
     ],
   },
   {
@@ -136,6 +154,12 @@ const PROJECT_CONTENT: {
     ],
     images: [
       { src: '/projects/mern-restaurant-banner.webp', alt: 'MERN Restaurant App overview' },
+      { src: '/projects/mern-restaurant-1.webp', alt: 'MERN Restaurant screenshot 1' },
+      { src: '/projects/mern-restaurant-2.webp', alt: 'MERN Restaurant screenshot 2' },
+      { src: '/projects/mern-restaurant-3.webp', alt: 'MERN Restaurant screenshot 3' },
+      { src: '/projects/mern-restaurant-4.webp', alt: 'MERN Restaurant screenshot 4' },
+      { src: '/projects/mern-restaurant-5.webp', alt: 'MERN Restaurant screenshot 5' },
+      { src: '/projects/mern-restaurant-6.webp', alt: 'MERN Restaurant screenshot 6' },
     ],
   },
 ];
@@ -235,7 +259,7 @@ const ProjectContent = ({ project }: { project: ProjectProps }) => {
                   alt={image.alt}
                   fill
                   sizes="(max-width: 768px) 100vw, 900px"
-                  className="object-cover transition-transform"
+                  className="bg-neutral-100 object-contain dark:bg-neutral-900"
                 />
               </div>
             ))}
