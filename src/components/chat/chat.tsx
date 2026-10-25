@@ -19,6 +19,7 @@ import {
 import WelcomeModal from '@/components/welcome-modal';
 import { Info } from 'lucide-react';
 import { matchSmallTalk } from '@/lib/smallTalk';
+import { matchStaticAnswer } from '@/lib/staticAnswers';
 import HelperBoost from './HelperBoost';
 
 // ClientOnly component for client-side rendering
@@ -130,7 +131,21 @@ const Chat = () => {
         videoRef.current.pause();
       }
       console.error('Chat error:', error.message, error.cause);
-      toast.error(`Error: ${error.message}`);
+      const msg = error.message ?? '';
+      if (/too many|slow down|429/i.test(msg)) {
+        toast.warning("You're sending messages a bit fast", {
+          description: 'Give it a few seconds, then try again.',
+        });
+      } else if (/failed to fetch|network/i.test(msg)) {
+        toast.error("Can't reach the server", {
+          description: 'Check your internet connection and try again.',
+        });
+      } else {
+        toast.error('My AI brain is taking a short break', {
+          description:
+            'Try again in a moment — or use the quick buttons below (Me, Projects, Skills, Contact), they always work.',
+        });
+      }
     },
     onToolCall: (tool) => {
       const toolName = tool.toolCall.toolName;
@@ -184,11 +199,17 @@ const Chat = () => {
   const submitQuery = (query) => {
     if (!query.trim() || isToolInProgress) return;
 
-    // Trivial greetings/thanks/goodbyes get a canned reply locally — no
-    // reason to spend a Mistral/Groq call on "hi".
-    const cannedReply = matchSmallTalk(query);
-    if (cannedReply) {
+    // Answer locally when the reply is already known: small talk gets a
+    // canned line, and quick questions (projects, skills, contact…) render
+    // their static card. No Mistral/Groq call, no latency, no rate limit.
+    const smallTalk = matchSmallTalk(query);
+    const staticAnswer = smallTalk ? null : matchStaticAnswer(query);
+    if (smallTalk || staticAnswer) {
       const now = Date.now();
+      const text = smallTalk ?? staticAnswer!.text;
+      // Mistral only accepts 9-char alphanumeric tool-call ids, and these
+      // messages are replayed as history on later real requests.
+      const toolCallId = Math.random().toString(36).slice(2, 11).padEnd(9, '0');
       setMessages([
         ...messages,
         {
@@ -196,12 +217,29 @@ const Chat = () => {
           role: 'user',
           content: query,
           createdAt: new Date(now),
+          parts: [{ type: 'text', text: query }],
         },
         {
           id: `local-${now + 1}`,
           role: 'assistant',
-          content: cannedReply,
+          content: text,
           createdAt: new Date(now + 1),
+          parts: staticAnswer
+            ? [
+                {
+                  type: 'tool-invocation',
+                  toolInvocation: {
+                    state: 'result',
+                    step: 0,
+                    toolCallId,
+                    toolName: staticAnswer.toolName,
+                    args: {},
+                    result: text,
+                  },
+                },
+                { type: 'text', text },
+              ]
+            : [{ type: 'text', text }],
         },
       ]);
       return;
