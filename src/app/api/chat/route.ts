@@ -3,6 +3,7 @@ import { createMistral } from '@ai-sdk/mistral';
 import { streamText, type LanguageModel, type StreamTextResult } from 'ai';
 import { SYSTEM_PROMPT } from './prompt';
 import {
+  getProviderStatusCode,
   logProviderError,
   SAFE_CHAT_ERROR,
   shouldUseFallback,
@@ -21,7 +22,17 @@ import { getWeather } from './tools/getWeather';
 export const maxDuration = 30;
 
 const MISTRAL_MODEL = process.env.MISTRAL_MODEL ?? 'mistral-small-latest';
-const GROQ_MODEL = process.env.GROQ_MODEL ?? 'openai/gpt-oss-20b';
+// Primary Groq model first, then backups with their own separate quotas.
+const GROQ_MODELS = [
+  process.env.GROQ_MODEL ?? 'openai/gpt-oss-20b',
+  'openai/gpt-oss-120b',
+  'qwen/qwen3.8-27b',
+].filter((m, i, all) => all.indexOf(m) === i);
+
+// Per warm instance: models that returned 429 are skipped for a while so
+// requests don't pay a failed round-trip to an exhausted model every time.
+const MODEL_COOLDOWN_MS = 5 * 60_000;
+const rateLimitedUntil = new Map<string, number>();
 
 const mistral = createMistral({
   apiKey: process.env.MISTRAL_API_KEY,
@@ -111,51 +122,70 @@ export async function POST(req: Request) {
     const { messages } = await req.json();
     messages.unshift(SYSTEM_PROMPT);
 
-    const mistralResult = startChat(mistral(MISTRAL_MODEL), messages);
-    const peekReader = mistralResult.fullStream.getReader();
-    const firstChunk = await peekReader.read();
+    // Ordered candidates: Mistral only when a key is configured, then each
+    // Groq model. Groq quotas (incl. tokens-per-day) are per model, so when
+    // one model is exhausted the next one usually still has headroom.
+    const candidates: { provider: string; modelId: string; model: LanguageModel }[] = [];
+    if (process.env.MISTRAL_API_KEY) {
+      candidates.push({ provider: 'mistral', modelId: MISTRAL_MODEL, model: mistral(MISTRAL_MODEL) });
+    }
+    if (process.env.GROQ_API_KEY) {
+      for (const id of GROQ_MODELS) {
+        candidates.push({ provider: 'groq', modelId: id, model: groq(id) });
+      }
+    }
+    if (candidates.length === 0) {
+      console.error('[CHAT-API] No AI provider key configured');
+      return new Response(SAFE_CHAT_ERROR, { status: 503 });
+    }
 
-    const mistralError =
-      !firstChunk.done &&
-      firstChunk.value != null &&
-      typeof firstChunk.value === 'object' &&
-      'type' in firstChunk.value &&
-      firstChunk.value.type === 'error'
-        ? (firstChunk.value as { type: 'error'; error: unknown }).error
-        : undefined;
+    // Skip models that recently hit their quota (keep at least one to try).
+    const now = Date.now();
+    const available = candidates.filter(
+      (c) => (rateLimitedUntil.get(c.modelId) ?? 0) <= now,
+    );
+    const ordered = available.length > 0 ? available : candidates;
 
-    const canFallback =
-      mistralError !== undefined &&
-      shouldUseFallback(mistralError) &&
-      Boolean(process.env.GROQ_API_KEY);
+    for (let i = 0; i < ordered.length; i++) {
+      const { provider, modelId, model } = ordered[i];
+      const isLast = i === ordered.length - 1;
 
-    if (canFallback) {
-      await peekReader.cancel();
-      logProviderError('mistral', MISTRAL_MODEL, mistralError, {
-        fallbackAttempted: true,
-      });
-      console.log('[CHAT-API] Falling back to Groq', GROQ_MODEL);
+      const result = startChat(model, messages);
+      const reader = result.fullStream.getReader();
+      const first = await reader.read();
 
-      return startChat(groq(GROQ_MODEL), messages).toDataStreamResponse({
+      const error =
+        !first.done &&
+        first.value != null &&
+        typeof first.value === 'object' &&
+        'type' in first.value &&
+        first.value.type === 'error'
+          ? (first.value as { type: 'error'; error: unknown }).error
+          : undefined;
+
+      // 404 = model retired/unavailable for this account: skip to the next.
+      const modelMissing = getProviderStatusCode(error) === 404;
+      if (error !== undefined && !isLast && (shouldUseFallback(error) || modelMissing)) {
+        await reader.cancel();
+        if (getProviderStatusCode(error) === 429) {
+          rateLimitedUntil.set(modelId, Date.now() + MODEL_COOLDOWN_MS);
+        }
+        logProviderError(provider, modelId, error, { fallbackAttempted: true });
+        continue;
+      }
+
+      if (error !== undefined) {
+        logProviderError(provider, modelId, error, { fallbackAttempted: false });
+      } else {
+        console.log('[CHAT-API] Serving with', provider, modelId);
+      }
+
+      return continueFromPeekedChunk(result, reader, first).toDataStreamResponse({
         getErrorMessage: () => SAFE_CHAT_ERROR,
       });
     }
 
-    if (mistralError !== undefined) {
-      logProviderError('mistral', MISTRAL_MODEL, mistralError, {
-        fallbackAttempted: false,
-      });
-    } else {
-      console.log('[CHAT-API] Primary: Mistral', MISTRAL_MODEL);
-    }
-
-    return continueFromPeekedChunk(
-      mistralResult,
-      peekReader,
-      firstChunk,
-    ).toDataStreamResponse({
-      getErrorMessage: () => SAFE_CHAT_ERROR,
-    });
+    return new Response(SAFE_CHAT_ERROR, { status: 503 });
   } catch (err) {
     console.error(
       '[CHAT-API] Global error:',
