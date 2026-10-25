@@ -6,7 +6,14 @@ import {
   IconArrowNarrowRight,
   IconX,
 } from '@tabler/icons-react';
-import { AnimatePresence, motion, useMotionValue, useSpring } from 'framer-motion';
+import {
+  AnimatePresence,
+  motion,
+  useMotionTemplate,
+  useMotionValue,
+  useSpring,
+} from 'framer-motion';
+import { ArrowUpRight } from 'lucide-react';
 import Image, { ImageProps } from 'next/image';
 import React, {
   createContext,
@@ -131,18 +138,15 @@ export const Carousel = ({
           >
             {items.map((item, index) => (
               <motion.div
-                initial={{
-                  opacity: 0,
-                  y: 20,
-                }}
+                initial={{ opacity: 0, y: 32, scale: 0.94 }}
                 animate={{
                   opacity: 1,
                   y: 0,
+                  scale: 1,
                   transition: {
-                    duration: 0.5,
-                    delay: 0.2 * index,
-                    ease: 'easeOut',
-                    once: true,
+                    duration: 0.6,
+                    delay: 0.1 * index,
+                    ease: [0.19, 1, 0.22, 1],
                   },
                 }}
                 key={'card' + index}
@@ -154,20 +158,26 @@ export const Carousel = ({
           </div>
         </div>
         <div className="mr-10 flex justify-end gap-2 md:mr-20">
-          <button
-            className="relative z-40 flex h-10 w-10 items-center justify-center rounded-full bg-gray-100 disabled:opacity-50"
+          <motion.button
+            whileHover={canScrollLeft ? { scale: 1.08 } : undefined}
+            whileTap={canScrollLeft ? { scale: 0.92 } : undefined}
+            transition={{ type: 'spring', stiffness: 400, damping: 20 }}
+            className="relative z-40 flex h-10 w-10 items-center justify-center rounded-full bg-gray-100 disabled:opacity-40 dark:bg-neutral-800"
             onClick={scrollLeft}
             disabled={!canScrollLeft}
           >
-            <IconArrowNarrowLeft className="h-6 w-6 text-gray-500" />
-          </button>
-          <button
-            className="relative z-40 flex h-10 w-10 items-center justify-center rounded-full bg-gray-100 disabled:opacity-50"
+            <IconArrowNarrowLeft className="h-6 w-6 text-gray-500 dark:text-neutral-300" />
+          </motion.button>
+          <motion.button
+            whileHover={canScrollRight ? { scale: 1.08 } : undefined}
+            whileTap={canScrollRight ? { scale: 0.92 } : undefined}
+            transition={{ type: 'spring', stiffness: 400, damping: 20 }}
+            className="relative z-40 flex h-10 w-10 items-center justify-center rounded-full bg-gray-100 disabled:opacity-40 dark:bg-neutral-800"
             onClick={scrollRight}
             disabled={!canScrollRight}
           >
-            <IconArrowNarrowRight className="h-6 w-6 text-gray-500" />
-          </button>
+            <IconArrowNarrowRight className="h-6 w-6 text-gray-500 dark:text-neutral-300" />
+          </motion.button>
         </div>
       </div>
     </CarouselContext.Provider>
@@ -216,11 +226,23 @@ export const Card = ({
     onCardClose(index);
   };
 
-  // 3D tilt-on-hover: rotate the card toward the cursor within its own bounds.
+  // 3D tilt + image parallax + cursor-glow — all driven off one mousemove so
+  // there's a single source of truth for "how far into the card is the cursor".
   const rotateX = useMotionValue(0);
   const rotateY = useMotionValue(0);
   const springRotateX = useSpring(rotateX, { stiffness: 200, damping: 20 });
   const springRotateY = useSpring(rotateY, { stiffness: 200, damping: 20 });
+
+  const imageX = useMotionValue(0);
+  const imageY = useMotionValue(0);
+  const springImageX = useSpring(imageX, { stiffness: 150, damping: 18 });
+  const springImageY = useSpring(imageY, { stiffness: 150, damping: 18 });
+
+  const glowX = useMotionValue(50);
+  const glowY = useMotionValue(50);
+  const springGlowX = useSpring(glowX, { stiffness: 120, damping: 22 });
+  const springGlowY = useSpring(glowY, { stiffness: 120, damping: 22 });
+  const glowBackground = useMotionTemplate`radial-gradient(220px circle at ${springGlowX}% ${springGlowY}%, rgba(59,130,246,0.35), transparent 70%)`;
 
   const handleTiltMove = (e: React.MouseEvent<HTMLDivElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
@@ -228,11 +250,18 @@ export const Card = ({
     const py = (e.clientY - rect.top) / rect.height - 0.5;
     rotateY.set(px * 14);
     rotateX.set(py * -14);
+    // Parallax: artwork drifts opposite the tilt, a few px of depth.
+    imageX.set(px * -10);
+    imageY.set(py * -10);
+    glowX.set((px + 0.5) * 100);
+    glowY.set((py + 0.5) * 100);
   };
 
   const handleTiltLeave = () => {
     rotateX.set(0);
     rotateY.set(0);
+    imageX.set(0);
+    imageY.set(0);
   };
 
   return (
@@ -288,42 +317,83 @@ export const Card = ({
           </div>
         )}
       </AnimatePresence>
-      <div
+      <motion.div
         style={{ perspective: 1000 }}
         onMouseMove={handleTiltMove}
         onMouseLeave={handleTiltLeave}
+        initial="rest"
+        whileHover="hover"
+        animate="rest"
+        className="group"
       >
         <motion.button
           layoutId={layout ? `card-${card.title}` : undefined}
           onClick={handleOpen}
           style={{ rotateX: springRotateX, rotateY: springRotateY }}
-          className="relative z-10 flex h-80 w-56 flex-col items-start justify-start overflow-hidden rounded-3xl bg-gray-100 dark:bg-neutral-900"
+          variants={{ rest: { y: 0 }, hover: { y: -8 } }}
+          transition={{ type: 'spring', stiffness: 300, damping: 22 }}
+          className="relative z-10 flex h-80 w-56 flex-col items-start justify-end overflow-hidden rounded-3xl bg-gray-100 shadow-md transition-shadow duration-300 group-hover:shadow-2xl dark:bg-neutral-900"
         >
-          <div className="absolute inset-x-0 top-0 z-30 h-full cursor-pointer bg-gradient-to-b from-black hover:scale-110 via-transparent to-transparent" />
-          {/*<div className="absolute inset-0 z-20 cursor-pointer bg-black/20 hover:bg-black/2" />*/}
-          <div className="relative z-40 p-8">
+          {/* Cursor-tracking soft blue glow */}
+          <motion.div
+            aria-hidden
+            style={{ background: glowBackground }}
+            variants={{ rest: { opacity: 0 }, hover: { opacity: 1 } }}
+            transition={{ duration: 0.3 }}
+            className="pointer-events-none absolute inset-0 z-20"
+          />
+
+          {/* Artwork, with a touch of parallax drift + hover zoom */}
+          <motion.div
+            style={{ x: springImageX, y: springImageY }}
+            variants={{ rest: { scale: 1 }, hover: { scale: 1.08 } }}
+            transition={{ type: 'spring', stiffness: 200, damping: 22 }}
+            className="absolute -inset-2"
+          >
+            <BlurImage
+              src={card.coverSrc || card.src}
+              alt={card.title}
+              fill
+              sizes="224px"
+              className="object-cover"
+            />
+          </motion.div>
+
+          {/* Legibility gradient */}
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 h-2/3 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
+
+          {/* Bottom text overlay — sized to fit the card, never pushes layout */}
+          <motion.div
+            variants={{ rest: { y: 0 }, hover: { y: -6 } }}
+            transition={{ type: 'spring', stiffness: 300, damping: 24 }}
+            className="relative z-30 w-full p-5"
+          >
             <motion.p
               layoutId={layout ? `category-${card.category}` : undefined}
-              className="text-left font-sans text-sm font-medium text-white md:text-base"
+              className="text-left font-sans text-[11px] font-medium tracking-wide text-white/70 uppercase"
             >
               {card.category}
             </motion.p>
             <motion.p
               layoutId={layout ? `title-${card.title}` : undefined}
-              className="max-w-xs text-left font-sans text-xl font-semibold [text-wrap:balance] text-white md:text-3xl"
+              className="mt-1 line-clamp-2 text-left font-sans text-lg leading-tight font-semibold text-white"
             >
               {card.shortTitle || card.title}
             </motion.p>
-          </div>
-          <BlurImage
-            src={card.coverSrc || card.src}
-            alt={card.title}
-            fill
-            sizes="224px"
-            className="absolute inset-0 z-10 object-cover"
-          />
+            <motion.span
+              variants={{
+                rest: { opacity: 0, y: 4 },
+                hover: { opacity: 1, y: 0 },
+              }}
+              transition={{ duration: 0.2 }}
+              className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-white/90"
+            >
+              View Project
+              <ArrowUpRight className="h-3.5 w-3.5" />
+            </motion.span>
+          </motion.div>
         </motion.button>
-      </div>
+      </motion.div>
     </>
   );
 };
