@@ -14,7 +14,7 @@ export function Presentation() {
     description:
       "Hey 👋\nI'm Om, a GenAI Engineer building production LLM applications, RAG pipelines, and multi-agent workflows that talk back and actually ship.",
     src: '/profile-om.jpg',
-    fallbackSrc: '/avatar-om.png',
+    fallbackSrc: '/avatar-om-face-v2.webp',
   };
 
   // Animation variants for text elements

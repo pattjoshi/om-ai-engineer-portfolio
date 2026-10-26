@@ -28,10 +28,36 @@ function sweep(now: number) {
   }
 }
 
+// Prefer headers the hosting platform sets itself. The FIRST entry of
+// X-Forwarded-For is client-supplied, so trusting it let anyone rotate a
+// fake IP per request and never be limited; the LAST entry is the one
+// appended by the nearest proxy.
 export function getClientKey(req: Request): string {
+  const platformIp =
+    req.headers.get('x-vercel-forwarded-for') ?? req.headers.get('x-real-ip');
+  if (platformIp) return platformIp.split(',')[0].trim();
   const forwardedFor = req.headers.get('x-forwarded-for');
-  if (forwardedFor) return forwardedFor.split(',')[0].trim();
-  return req.headers.get('x-real-ip') ?? 'unknown';
+  if (forwardedFor) return forwardedFor.split(',').pop()!.trim();
+  return 'unknown';
+}
+
+// Global ceiling across ALL clients (per warm instance): caps total spend
+// even if an attacker spreads requests over many real IPs.
+const GLOBAL_MAX_PER_MINUTE = 60;
+let globalTimestamps: number[] = [];
+
+export function checkGlobalLimit(): RateLimitResult {
+  const now = Date.now();
+  globalTimestamps = globalTimestamps.filter((t) => now - t < WINDOW_MS);
+  if (globalTimestamps.length >= GLOBAL_MAX_PER_MINUTE) {
+    const retryAfterSeconds = Math.max(
+      1,
+      Math.ceil((WINDOW_MS - (now - globalTimestamps[0])) / 1000),
+    );
+    return { limited: true, retryAfterSeconds };
+  }
+  globalTimestamps.push(now);
+  return { limited: false };
 }
 
 export type RateLimitResult =

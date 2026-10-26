@@ -5,7 +5,9 @@ const rl = readline.createInterface({
   output: process.stdout
 });
 
-const redirect_uri = 'https://www.yuvis.me/callback';
+// Loopback redirect: the auth code never leaves your machine. Register this
+// exact URI in your Spotify app's Redirect URIs before running.
+const redirect_uri = 'http://127.0.0.1:8888/callback';
 
 rl.question('1. Paste your SPOTIFY_CLIENT_ID: ', (clientId) => {
   rl.question('2. Paste your SPOTIFY_CLIENT_SECRET: ', (clientSecret) => {
@@ -21,7 +23,7 @@ rl.question('1. Paste your SPOTIFY_CLIENT_ID: ', (clientId) => {
     console.log('=============================================\n');
     console.log('After authorizing, you will be redirected to a page that says "Not Found" or "Site cannot be reached". THAT IS OKAY!');
     console.log('Look at the URL in your browser. It will look like this:');
-    console.log('https://www.yuvis.me/callback?code=AQD_YOUR_CODE_HERE...');
+    console.log('http://127.0.0.1:8888/callback?code=AQD_YOUR_CODE_HERE...');
 
     rl.question('\n3. Paste the entire CODE from the URL here: ', async (code) => {
       code = code.trim();

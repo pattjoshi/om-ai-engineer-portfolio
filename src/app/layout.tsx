@@ -19,6 +19,11 @@ const inter = Inter({
 // TODO: update once the site has its final custom domain
 const SITE_URL = "https://om-ai-portfolio.vercel.app";
 
+// Set NEXT_PUBLIC_GA_ID to your own GA4 measurement ID to enable analytics.
+// Validated so a malformed value can never be injected into the inline script.
+const rawGaId = process.env.NEXT_PUBLIC_GA_ID;
+const GA_ID = rawGaId && /^G-[A-Z0-9]+$/.test(rawGaId) ? rawGaId : undefined;
+
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: "Om Prakash Pattjoshi Portfolio",
@@ -61,14 +66,9 @@ export const metadata: Metadata = {
     creator: "@ompattjoshi",
   },
   icons: {
-    icon: [
-      {
-        url: "/avatar-om.png",
-        sizes: "any",
-      }
-    ],
-    shortcut: "/avatar-om.png?v=2",
-    apple: "/avatar-om.png?v=2",
+    icon: [{ url: "/favicon.png", sizes: "64x64", type: "image/png" }],
+    shortcut: "/favicon.png",
+    apple: "/apple-touch-icon.png",
   },
 };
 
@@ -80,26 +80,30 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-        <link rel="icon" href="/avatar-om.png" sizes="any" />
-        {/* Google Analytics */}
-        <Script
-          async
-          src="https://www.googletagmanager.com/gtag/js?id=G-QTH2CN2YRQ"
-          strategy="afterInteractive"
-        />
-        <Script
-          id="google-analytics"
-          strategy="afterInteractive"
-          dangerouslySetInnerHTML={{
-            __html: `
-              window['dataLayer'] = window['dataLayer'] || [];
-              function gtag(){window['dataLayer'].push(arguments);}
-              gtag('js', new Date());
-              gtag('config', 'G-QTH2CN2YRQ');
-            `,
-          }}
-        />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <link rel="icon" href="/favicon.png" sizes="64x64" type="image/png" />
+        {/* Google Analytics — only when your own measurement ID is set */}
+        {GA_ID && (
+          <>
+            <Script
+              async
+              src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`}
+              strategy="afterInteractive"
+            />
+            <Script
+              id="google-analytics"
+              strategy="afterInteractive"
+              dangerouslySetInnerHTML={{
+                __html: `
+                  window['dataLayer'] = window['dataLayer'] || [];
+                  function gtag(){window['dataLayer'].push(arguments);}
+                  gtag('js', new Date());
+                  gtag('config', ${JSON.stringify(GA_ID)});
+                `,
+              }}
+            />
+          </>
+        )}
       </head>
       <body
         className={cn(

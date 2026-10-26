@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation';
 const InternshipCard = () => {
   
   const openLinkedIn = () => {
-  window.open('https://www.linkedin.com/in/om-prakash-pattjoshi-/', '_blank');
+  window.open('https://www.linkedin.com/in/om-prakash-pattjoshi-/', '_blank', 'noopener,noreferrer');
   };
   const router = useRouter();
 

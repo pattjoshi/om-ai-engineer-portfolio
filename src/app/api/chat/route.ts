@@ -8,7 +8,7 @@ import {
   SAFE_CHAT_ERROR,
   shouldUseFallback,
 } from './provider-fallback';
-import { checkRateLimit, getClientKey } from './rate-limit';
+import { checkGlobalLimit, checkRateLimit, getClientKey } from './rate-limit';
 import { getContact } from './tools/getContact';
 import { getCrazy } from './tools/getCrazy';
 import { getInternship } from './tools/getInternship';
@@ -16,10 +16,40 @@ import { getPresentation } from './tools/getPresentation';
 import { getProjects } from './tools/getProjects';
 import { getResume } from './tools/getResume';
 import { getSkills } from './tools/getSkills';
-import { getSports } from './tools/getSports';
-import { getWeather } from './tools/getWeather';
 
 export const maxDuration = 30;
+
+// Input limits: the client fully controls the request body, so cap what we
+// forward to the (paid) model. Older turns are dropped — they add tokens on
+// every request but rarely change the answer for a portfolio chat.
+const MAX_BODY_BYTES = 64 * 1024;
+const MAX_HISTORY_MESSAGES = 12;
+const MAX_MESSAGE_CHARS = 2000;
+const MAX_OUTPUT_TOKENS = 800;
+
+type ChatMessage = { role: 'user' | 'assistant'; content: string };
+
+// Only plain user/assistant text survives. A client-supplied "system"
+// message (prompt injection to override the persona) or tool payloads are
+// discarded; the server prepends its own SYSTEM_PROMPT.
+function sanitizeMessages(raw: unknown): ChatMessage[] | null {
+  if (!Array.isArray(raw)) return null;
+  const cleaned: ChatMessage[] = [];
+  for (const m of raw) {
+    if (!m || typeof m !== 'object') continue;
+    const { role, content } = m as { role?: unknown; content?: unknown };
+    if ((role !== 'user' && role !== 'assistant') || typeof content !== 'string') {
+      continue;
+    }
+    const text = content.trim().slice(0, MAX_MESSAGE_CHARS);
+    if (text) cleaned.push({ role, content: text });
+  }
+  const recent = cleaned.slice(-MAX_HISTORY_MESSAGES);
+  if (recent.length === 0 || recent[recent.length - 1].role !== 'user') {
+    return null;
+  }
+  return recent;
+}
 
 const MISTRAL_MODEL = process.env.MISTRAL_MODEL ?? 'mistral-small-latest';
 // Primary Groq model first, then backups with their own separate quotas.
@@ -48,10 +78,8 @@ const tools = {
   getResume,
   getContact,
   getSkills,
-  getSports,
   getCrazy,
   getInternship,
-  getWeather,
 };
 
 function startChat(
@@ -64,6 +92,7 @@ function startChat(
     tools,
     toolCallStreaming: true,
     maxSteps: 2,
+    maxTokens: MAX_OUTPUT_TOKENS,
     // Fail over instead of retrying the same provider.
     maxRetries: 0,
   });
@@ -107,7 +136,8 @@ function continueFromPeekedChunk(
 }
 
 export async function POST(req: Request) {
-  const rateLimit = checkRateLimit(getClientKey(req));
+  let rateLimit = checkRateLimit(getClientKey(req));
+  if (!rateLimit.limited) rateLimit = checkGlobalLimit();
   if (rateLimit.limited) {
     return new Response(
       'Too many messages — please slow down and try again shortly.',
@@ -119,8 +149,32 @@ export async function POST(req: Request) {
   }
 
   try {
-    const { messages } = await req.json();
-    messages.unshift(SYSTEM_PROMPT);
+    const declared = Number(req.headers.get('content-length') ?? 0);
+    if (declared > MAX_BODY_BYTES) {
+      return new Response('Request too large.', { status: 413 });
+    }
+    // content-length can be absent or wrong (chunked), so check the real size.
+    const rawBody = await req.text();
+    if (rawBody.length > MAX_BODY_BYTES) {
+      return new Response('Request too large.', { status: 413 });
+    }
+
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(rawBody);
+    } catch {
+      return new Response('Invalid request.', { status: 400 });
+    }
+
+    const userMessages = sanitizeMessages(
+      (parsed as { messages?: unknown } | null)?.messages,
+    );
+    if (!userMessages) {
+      return new Response('Invalid request.', { status: 400 });
+    }
+    const messages = [SYSTEM_PROMPT, ...userMessages] as Parameters<
+      typeof streamText
+    >[0]['messages'];
 
     // Ordered candidates: Mistral only when a key is configured, then each
     // Groq model. Groq quotas (incl. tokens-per-day) are per model, so when

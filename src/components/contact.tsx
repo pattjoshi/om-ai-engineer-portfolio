@@ -7,8 +7,10 @@ import { toast } from 'sonner';
 
 export function Contact() {
   const copyToClipboard = (value: string, label: string) => {
-    navigator.clipboard.writeText(value);
-    toast.success(`${label} copied to clipboard`);
+    navigator.clipboard.writeText(value).then(
+      () => toast.success(`${label} copied to clipboard`),
+      () => toast.error(`Couldn't copy — your ${label.toLowerCase()} is ${value}`),
+    );
   };
 
   const contactInfo = [
@@ -85,7 +87,7 @@ export function Contact() {
                 onClick={() =>
                   contact.copy
                     ? copyToClipboard(contact.value, contact.title)
-                    : window.open(contact.href, '_blank')
+                    : window.open(contact.href, '_blank', 'noopener,noreferrer')
                 }
               >
                 {contact.copy
