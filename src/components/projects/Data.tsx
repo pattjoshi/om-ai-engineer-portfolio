@@ -70,7 +70,6 @@ const PROJECT_CONTENT: {
       },
     ],
     images: [
-      { src: '/projects/fresherai-banner.webp', alt: 'FresherAI multi-agent architecture overview' },
       { src: '/projects/fresherai-1.webp', alt: 'FresherAI screenshot 1' },
       { src: '/projects/fresherai-2.webp', alt: 'FresherAI screenshot 2' },
       { src: '/projects/fresherai-3.webp', alt: 'FresherAI screenshot 3' },
@@ -82,7 +81,7 @@ const PROJECT_CONTENT: {
     tagline: 'Upload your resume once. Let AI find and rank the right jobs.',
     description:
       'Upload your resume once, and the agent checks LinkedIn, Naukri, and Indeed for fresh openings, then uses AI to rank every job by how well it fits your skills and experience — automated end to end with Playwright.',
-    techStack: ['Python', 'Playwright', 'Web Automation', 'AI Ranking'],
+    techStack: ['Python', 'Playwright','Next.js', 'Web Automation', 'AI Ranking'],
     date: '2025',
     links: [
       {
@@ -91,7 +90,10 @@ const PROJECT_CONTENT: {
       },
     ],
     images: [
-      { src: '/projects/job-search-banner.webp', alt: 'AI Job Search Agent overview' },
+      { src: '/projects/deshbord.webp', alt: 'AI Job Search deshbord overview' },
+      { src: '/projects/searchjob.webp', alt: 'AI Job Search search job overview' },
+      { src: '/projects/application.webp', alt: 'AI Job Search Application tracker overview' },
+      { src: '/projects/Notes.webp', alt: 'AI Job Search Notes section overview' },
     ],
   },
   {
@@ -108,7 +110,6 @@ const PROJECT_CONTENT: {
       },
     ],
     images: [
-      { src: '/projects/linkedin-extractor-banner.webp', alt: 'LinkedIn Job Post & Email Extractor overview' },
       { src: '/projects/linkedin-extractor-1.webp', alt: 'LinkedIn Extractor screenshot 1' },
       { src: '/projects/linkedin-extractor-2.webp', alt: 'LinkedIn Extractor screenshot 2' },
       { src: '/projects/linkedin-extractor-3.webp', alt: 'LinkedIn Extractor popup 1' },
@@ -130,7 +131,7 @@ const PROJECT_CONTENT: {
       },
     ],
     images: [
-      { src: '/projects/multi-vendor-eshop-banner.webp', alt: 'Multi-Vendor E-Shop overview' },
+    
       { src: '/projects/multi-vendor-eshop-1.webp', alt: 'Multi-Vendor E-Shop screenshot 1' },
       { src: '/projects/multi-vendor-eshop-2.webp', alt: 'Multi-Vendor E-Shop screenshot 2' },
       { src: '/projects/multi-vendor-eshop-3.webp', alt: 'Multi-Vendor E-Shop screenshot 3' },
@@ -153,7 +154,6 @@ const PROJECT_CONTENT: {
       },
     ],
     images: [
-      { src: '/projects/mern-restaurant-banner.webp', alt: 'MERN Restaurant App overview' },
       { src: '/projects/mern-restaurant-1.webp', alt: 'MERN Restaurant screenshot 1' },
       { src: '/projects/mern-restaurant-2.webp', alt: 'MERN Restaurant screenshot 2' },
       { src: '/projects/mern-restaurant-3.webp', alt: 'MERN Restaurant screenshot 3' },
