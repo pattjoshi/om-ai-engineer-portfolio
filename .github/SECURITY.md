@@ -22,7 +22,7 @@ We take all security reports seriously. If you discover a vulnerability, please 
 
 Instead, please contact us at:
 
-📧 **Email:** yuvraj0412s@gmail.com
+📧 **Email:** omprakashpattjoshi123@gmail.com
 
 When reporting, please include:
 
