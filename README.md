@@ -9,6 +9,8 @@
 </div>
 
 ---
+<img width="948" height="446" alt="image" src="https://github.com/user-attachments/assets/18881155-c137-49aa-b1e1-de6590c52cbe" />
+
 
 ### **Badges**
 
