@@ -4,19 +4,14 @@ import {
   ChatBubble,
   ChatBubbleMessage,
 } from '@/components/ui/chat/chat-bubble';
-import { ChatRequestOptions } from 'ai';
-import { Message } from 'ai/react';
+import { getMessageText, getToolParts } from '@/lib/chatParts';
+import type { UIMessage } from 'ai';
 import { motion } from 'framer-motion';
 import ChatMessageContent from './chat-message-content';
 import ToolRenderer from './tool-renderer';
 
 interface SimplifiedChatViewProps {
-  message: Message;
-  isLoading: boolean;
-  reload: (
-    chatRequestOptions?: ChatRequestOptions
-  ) => Promise<string | null | undefined>;
-  addToolResult?: (args: { toolCallId: string; result: string }) => void;
+  message: UIMessage;
 }
 
 const MOTION_CONFIG = {
@@ -29,34 +24,21 @@ const MOTION_CONFIG = {
   },
 };
 
-export function SimplifiedChatView({
-  message,
-  isLoading,
-  reload,
-  addToolResult,
-}: SimplifiedChatViewProps) {
+export function SimplifiedChatView({ message }: SimplifiedChatViewProps) {
   if (message.role !== 'assistant') return null;
 
-  // Extract tool invocations that are in "result" state
-  const toolInvocations =
-    message.parts
-      ?.filter(
-        (part) =>
-          part.type === 'tool-invocation' &&
-          part.toolInvocation?.state === 'result'
-      )
-      .map((part) =>
-        part.type === 'tool-invocation' ? part.toolInvocation : null
-      )
-      .filter(Boolean) || [];
+  // Only display the first completed tool (if any)
+  const currentTool = getToolParts(message)
+    .filter((t) => t.done)
+    .slice(0, 1);
 
-  // Only display the first tool (if any)
-  const currentTool = toolInvocations.length > 0 ? [toolInvocations[0]] : [];
-
-  const hasTextContent = message.content.trim().length > 0;
   const hasTools = currentTool.length > 0;
-
-  console.log('currentTool', currentTool);
+  // The model stops after a tool call, so the tool's own reply is the text.
+  const fallbackText = !getMessageText(message) ? currentTool[0]?.outputText : undefined;
+  const textMessage: UIMessage = fallbackText
+    ? { id: message.id, role: 'assistant', parts: [{ type: 'text', text: fallbackText }] }
+    : message;
+  const hasTextContent = getMessageText(textMessage).length > 0;
 
   return (
     <motion.div {...MOTION_CONFIG} className="flex h-full w-full flex-col px-4">
@@ -77,14 +59,7 @@ export function SimplifiedChatView({
           <div className="w-full">
             <ChatBubble variant="received" className="w-full">
               <ChatBubbleMessage className="w-full">
-                <ChatMessageContent
-                  message={message}
-                  isLast={true}
-                  isLoading={isLoading}
-                  reload={reload}
-                  addToolResult={addToolResult}
-                  skipToolRendering={true}
-                />
+                <ChatMessageContent message={textMessage} />
               </ChatBubbleMessage>
             </ChatBubble>
           </div>

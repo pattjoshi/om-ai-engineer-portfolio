@@ -1,5 +1,6 @@
 'use client';
 import { useChat } from '@ai-sdk/react';
+import type { UIMessage } from 'ai';
 import { AnimatePresence, motion } from 'framer-motion';
 import dynamic from 'next/dynamic';
 import Image from 'next/image';
@@ -20,6 +21,7 @@ import WelcomeModal from '@/components/welcome-modal';
 import { Info } from 'lucide-react';
 import { matchSmallTalk } from '@/lib/smallTalk';
 import { matchStaticAnswer } from '@/lib/staticAnswers';
+import { getToolParts } from '@/lib/chatParts';
 import HelperBoost from './HelperBoost';
 
 // ClientOnly component for client-side rendering
@@ -82,7 +84,6 @@ const MOTION_CONFIG = {
 };
 
 const Chat = () => {
-  const videoRef = useRef<HTMLVideoElement | null>(null);
   const searchParams = useSearchParams();
   const initialQuery = searchParams.get('query');
   // A ref (not state) because React 19's StrictMode double-invokes effects
@@ -90,47 +91,11 @@ const Chat = () => {
   // invocation from also firing submitQuery, which would send two live LLM
   // requests for a single `?query=` navigation. A ref is synchronous.
   const autoSubmittedRef = useRef(false);
-  const [loadingSubmit, setLoadingSubmit] = useState(false);
-  const [isTalking, setIsTalking] = useState(false);
+  const [input, setInput] = useState('');
 
-  const {
-    messages,
-    input,
-    handleInputChange,
-    handleSubmit,
-    isLoading,
-    stop,
-    setMessages,
-    setInput,
-    reload,
-    addToolResult,
-    append,
-  } = useChat({
-    onResponse: (response) => {
-      if (response) {
-        setLoadingSubmit(false);
-        setIsTalking(true);
-        if (videoRef.current) {
-          videoRef.current.play().catch((error) => {
-            console.error('Failed to play video:', error);
-          });
-        }
-      }
-    },
-    onFinish: () => {
-      setLoadingSubmit(false);
-      setIsTalking(false);
-      if (videoRef.current) {
-        videoRef.current.pause();
-      }
-    },
+  const { messages, sendMessage, status, stop, setMessages } = useChat({
     onError: (error) => {
-      setLoadingSubmit(false);
-      setIsTalking(false);
-      if (videoRef.current) {
-        videoRef.current.pause();
-      }
-      console.error('Chat error:', error.message, error.cause);
+      console.error('Chat error:', error.message);
       const msg = error.message ?? '';
       if (/too many|slow down|429/i.test(msg)) {
         toast.warning("You're sending messages a bit fast", {
@@ -147,11 +112,12 @@ const Chat = () => {
         });
       }
     },
-    onToolCall: (tool) => {
-      const toolName = tool.toolCall.toolName;
-      console.log('Tool call:', toolName);
-    },
   });
+
+  // v5 exposes a single status instead of isLoading/onResponse callbacks.
+  const isLoading = status === 'submitted' || status === 'streaming';
+  const loadingSubmit = status === 'submitted';
+  const isTalking = status === 'streaming';
 
   const { currentAIMessage, latestUserMessage, hasActiveTool } = useMemo(() => {
     const latestAIMessageIndex = messages.findLastIndex(
@@ -161,43 +127,27 @@ const Chat = () => {
       (m) => m.role === 'user'
     );
 
-    const result = {
-      currentAIMessage:
-        latestAIMessageIndex !== -1 ? messages[latestAIMessageIndex] : null,
+    const currentAIMessage =
+      latestAIMessageIndex !== -1 && latestAIMessageIndex > latestUserMessageIndex
+        ? messages[latestAIMessageIndex]
+        : null;
+
+    return {
+      currentAIMessage,
       latestUserMessage:
         latestUserMessageIndex !== -1 ? messages[latestUserMessageIndex] : null,
-      hasActiveTool: false,
+      hasActiveTool: currentAIMessage
+        ? getToolParts(currentAIMessage).some((t) => t.done)
+        : false,
     };
-
-    if (result.currentAIMessage) {
-      result.hasActiveTool =
-        result.currentAIMessage.parts?.some(
-          (part) =>
-            part.type === 'tool-invocation' &&
-            part.toolInvocation?.state === 'result'
-        ) || false;
-    }
-
-    if (latestAIMessageIndex < latestUserMessageIndex) {
-      result.currentAIMessage = null;
-    }
-
-    return result;
   }, [messages]);
 
   const isToolInProgress = messages.some(
-    (m) =>
-      m.role === 'assistant' &&
-      m.parts?.some(
-        (part) =>
-          part.type === 'tool-invocation' &&
-          part.toolInvocation?.state !== 'result'
-      )
+    (m) => m.role === 'assistant' && getToolParts(m).some((t) => !t.done)
   );
 
-  //@ts-ignore
-  const submitQuery = (query) => {
-    if (!query.trim() || isToolInProgress) return;
+  const submitQuery = (query: string) => {
+    if (!query.trim() || isToolInProgress || isLoading) return;
 
     // Answer locally when the reply is already known: small talk gets a
     // canned line, and quick questions (projects, skills, contact…) render
@@ -207,80 +157,39 @@ const Chat = () => {
     if (smallTalk || staticAnswer) {
       const now = Date.now();
       const text = smallTalk ?? staticAnswer!.text;
-      // Mistral only accepts 9-char alphanumeric tool-call ids, and these
-      // messages are replayed as history on later real requests.
-      const toolCallId = Math.random().toString(36).slice(2, 11).padEnd(9, '0');
+      const assistantParts: UIMessage['parts'] = staticAnswer
+        ? [
+            {
+              type: `tool-${staticAnswer.toolName}`,
+              toolCallId: `local-${now}`,
+              state: 'output-available',
+              input: {},
+              output: text,
+            } as UIMessage['parts'][number],
+            { type: 'text', text },
+          ]
+        : [{ type: 'text', text }];
+
       setMessages([
         ...messages,
-        {
-          id: `local-${now}`,
-          role: 'user',
-          content: query,
-          createdAt: new Date(now),
-          parts: [{ type: 'text', text: query }],
-        },
-        {
-          id: `local-${now + 1}`,
-          role: 'assistant',
-          content: text,
-          createdAt: new Date(now + 1),
-          parts: staticAnswer
-            ? [
-                {
-                  type: 'tool-invocation',
-                  toolInvocation: {
-                    state: 'result',
-                    step: 0,
-                    toolCallId,
-                    toolName: staticAnswer.toolName,
-                    args: {},
-                    result: text,
-                  },
-                },
-                { type: 'text', text },
-              ]
-            : [{ type: 'text', text }],
-        },
+        { id: `local-${now}`, role: 'user', parts: [{ type: 'text', text: query }] },
+        { id: `local-${now + 1}`, role: 'assistant', parts: assistantParts },
       ]);
       return;
     }
 
-    setLoadingSubmit(true);
-    append({
-      role: 'user',
-      content: query,
-    });
+    sendMessage({ text: query });
   };
 
   useEffect(() => {
-    if (videoRef.current) {
-      videoRef.current.loop = true;
-      videoRef.current.muted = true;
-      videoRef.current.playsInline = true;
-      videoRef.current.pause();
-    }
-
     if (initialQuery && !autoSubmittedRef.current) {
       autoSubmittedRef.current = true;
-      setInput('');
       submitQuery(initialQuery);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialQuery]);
 
-  useEffect(() => {
-    if (videoRef.current) {
-      if (isTalking) {
-        videoRef.current.play().catch((error) => {
-          console.error('Failed to play video:', error);
-        });
-      } else {
-        videoRef.current.pause();
-      }
-    }
-  }, [isTalking]);
-
-  //@ts-ignore
-  const onSubmit = (e) => {
+  const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!input.trim() || isToolInProgress) return;
     submitQuery(input);
@@ -289,11 +198,6 @@ const Chat = () => {
 
   const handleStop = () => {
     stop();
-    setLoadingSubmit(false);
-    setIsTalking(false);
-    if (videoRef.current) {
-      videoRef.current.pause();
-    }
   };
 
   // Check if this is the initial empty state (no messages)
@@ -339,12 +243,7 @@ const Chat = () => {
               >
                 <ChatBubble variant="sent">
                   <ChatBubbleMessage>
-                    <ChatMessageContent
-                      message={latestUserMessage}
-                      isLast={true}
-                      isLoading={false}
-                      reload={() => Promise.resolve(null)}
-                    />
+                    <ChatMessageContent message={latestUserMessage} />
                   </ChatBubbleMessage>
                 </ChatBubble>
               </motion.div>
@@ -371,12 +270,7 @@ const Chat = () => {
               </motion.div>
             ) : currentAIMessage ? (
               <div className="pb-4">
-                <SimplifiedChatView
-                  message={currentAIMessage}
-                  isLoading={isLoading}
-                  reload={reload}
-                  addToolResult={addToolResult}
-                />
+                <SimplifiedChatView message={currentAIMessage} />
               </div>
             ) : (
               loadingSubmit && (
@@ -402,7 +296,7 @@ const Chat = () => {
     <HelperBoost submitQuery={submitQuery} setInput={setInput} />
     <ChatBottombar
       input={input}
-      handleInputChange={handleInputChange}
+      handleInputChange={(e) => setInput(e.target.value)}
       handleSubmit={onSubmit}
       isLoading={isLoading}
       stop={handleStop}

@@ -4,7 +4,7 @@ import { z } from 'zod';
 export const getInternship = tool({
   description:
     "Shows a summary of the kind of full-time engineering role I'm looking for, my availability, tech stack, and contact info. Use this tool when the user asks about my job search, whether I'm open to opportunities, or how to hire or contact me.",
-  parameters: z.object({}),
+  inputSchema: z.object({}),
   execute: async () => {
     return `Here's what I'm looking for 👇
 

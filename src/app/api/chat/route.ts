@@ -1,6 +1,12 @@
 import { createGroq } from '@ai-sdk/groq';
 import { createMistral } from '@ai-sdk/mistral';
-import { streamText, type LanguageModel, type StreamTextResult } from 'ai';
+import {
+  stepCountIs,
+  streamText,
+  type LanguageModel,
+  type ModelMessage,
+  type StreamTextResult,
+} from 'ai';
 import { SYSTEM_PROMPT } from './prompt';
 import {
   getProviderStatusCode,
@@ -37,11 +43,27 @@ function sanitizeMessages(raw: unknown): ChatMessage[] | null {
   const cleaned: ChatMessage[] = [];
   for (const m of raw) {
     if (!m || typeof m !== 'object') continue;
-    const { role, content } = m as { role?: unknown; content?: unknown };
-    if ((role !== 'user' && role !== 'assistant') || typeof content !== 'string') {
-      continue;
+    const { role, parts, content } = m as {
+      role?: unknown;
+      parts?: unknown;
+      content?: unknown;
+    };
+    if (role !== 'user' && role !== 'assistant') continue;
+    // AI SDK v5 UI messages carry text in `parts`; plain `content` is still
+    // accepted for simple API clients. Tool parts are deliberately dropped.
+    let raw = '';
+    if (Array.isArray(parts)) {
+      raw = parts
+        .filter(
+          (p): p is { type: 'text'; text: string } =>
+            !!p && typeof p === 'object' && p.type === 'text' && typeof p.text === 'string',
+        )
+        .map((p) => p.text)
+        .join('\n');
+    } else if (typeof content === 'string') {
+      raw = content;
     }
-    const text = content.trim().slice(0, MAX_MESSAGE_CHARS);
+    const text = raw.trim().slice(0, MAX_MESSAGE_CHARS);
     if (text) cleaned.push({ role, content: text });
   }
   const recent = cleaned.slice(-MAX_HISTORY_MESSAGES);
@@ -82,37 +104,65 @@ const tools = {
   getInternship,
 };
 
-function startChat(
-  model: LanguageModel,
-  messages: Parameters<typeof streamText>[0]['messages'],
-) {
+function startChat(model: LanguageModel, messages: ModelMessage[]) {
   return streamText({
     model,
+    system: SYSTEM_PROMPT.content,
     messages,
     tools,
-    toolCallStreaming: true,
-    maxSteps: 2,
-    maxTokens: MAX_OUTPUT_TOKENS,
+    // One step only: every tool here renders a static card and returns its
+    // own reply text, so a second model call just to narrate the card
+    // doubled cost/latency and could hit the per-minute limit mid-answer.
+    stopWhen: stepCountIs(1),
+    maxOutputTokens: MAX_OUTPUT_TOKENS,
     // Fail over instead of retrying the same provider.
     maxRetries: 0,
   });
 }
 
+// v5 streams open with bookkeeping parts before any model output; a provider
+// failure (401/404/429) shows up as the first part AFTER these.
+const PREAMBLE_TYPES = new Set(['start', 'start-step']);
+
 /**
- * Continue a stream after the first chunk has already been read from `reader`.
- * A second `fullStream` access would tee() and replay the first chunk
- * (AI SDK 4 StreamTextResult.teeStream).
+ * Read past the preamble to the first meaningful part. Returns everything
+ * read so far (to replay) and the provider error, if that part was one.
  */
-function continueFromPeekedChunk(
+async function peekStream(reader: ReadableStreamDefaultReader<unknown>) {
+  const buffered: unknown[] = [];
+  let done = false;
+  while (true) {
+    const next = await reader.read();
+    if (next.done) {
+      done = true;
+      break;
+    }
+    buffered.push(next.value);
+    const type = (next.value as { type?: string } | null)?.type;
+    if (!type || !PREAMBLE_TYPES.has(type)) break;
+  }
+  const last = buffered[buffered.length - 1] as
+    | { type?: string; error?: unknown }
+    | undefined;
+  const error = last?.type === 'error' ? last.error : undefined;
+  return { buffered, done, error };
+}
+
+/**
+ * Continue a stream whose first parts were already read from `reader`.
+ * Accessing `fullStream` again would tee() and replay from the start, so
+ * the result's `fullStream` is replaced with buffered parts + the rest.
+ */
+function continueFromPeeked(
   result: StreamTextResult<typeof tools, never>,
   reader: ReadableStreamDefaultReader<unknown>,
-  first: ReadableStreamReadResult<unknown>,
+  buffered: unknown[],
+  done: boolean,
 ): StreamTextResult<typeof tools, never> {
   const reconstructed = new ReadableStream({
-    async start(controller) {
-      if (!first.done && first.value !== undefined) {
-        controller.enqueue(first.value);
-      }
+    start(controller) {
+      for (const part of buffered) controller.enqueue(part);
+      if (done) controller.close();
     },
     async pull(controller) {
       const { done, value } = await reader.read();
@@ -172,9 +222,7 @@ export async function POST(req: Request) {
     if (!userMessages) {
       return new Response('Invalid request.', { status: 400 });
     }
-    const messages = [SYSTEM_PROMPT, ...userMessages] as Parameters<
-      typeof streamText
-    >[0]['messages'];
+    const messages: ModelMessage[] = userMessages;
 
     // Ordered candidates: Mistral only when a key is configured, then each
     // Groq model. Groq quotas (incl. tokens-per-day) are per model, so when
@@ -205,17 +253,8 @@ export async function POST(req: Request) {
       const isLast = i === ordered.length - 1;
 
       const result = startChat(model, messages);
-      const reader = result.fullStream.getReader();
-      const first = await reader.read();
-
-      const error =
-        !first.done &&
-        first.value != null &&
-        typeof first.value === 'object' &&
-        'type' in first.value &&
-        first.value.type === 'error'
-          ? (first.value as { type: 'error'; error: unknown }).error
-          : undefined;
+      const reader = result.fullStream.getReader() as ReadableStreamDefaultReader<unknown>;
+      const { buffered, done, error } = await peekStream(reader);
 
       // 404 = model retired/unavailable for this account: skip to the next.
       const modelMissing = getProviderStatusCode(error) === 404;
@@ -234,8 +273,14 @@ export async function POST(req: Request) {
         console.log('[CHAT-API] Serving with', provider, modelId);
       }
 
-      return continueFromPeekedChunk(result, reader, first).toDataStreamResponse({
-        getErrorMessage: () => SAFE_CHAT_ERROR,
+      return continueFromPeeked(result, reader, buffered, done).toUIMessageStreamResponse({
+        // Reasoning models (gpt-oss, qwen) emit chain-of-thought that can
+        // paraphrase the system prompt; the UI never shows it, so don't ship it.
+        sendReasoning: false,
+        onError: (err) => {
+          logProviderError(provider, modelId, err, { fallbackAttempted: false });
+          return SAFE_CHAT_ERROR;
+        },
       });
     }
 

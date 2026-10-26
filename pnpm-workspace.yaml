@@ -8,3 +8,6 @@ overrides:
   mdast-util-to-hast: ^13.2.1
   baseline-browser-mapping: ^2.11.0
   sharp: ^0.35.5
+  # undici 5 (via @ai-sdk/provider-utils) has request-smuggling/DoS advisories;
+  # the Agent/fetch APIs it uses are unchanged in 6.x.
+  undici: ^6.28.1

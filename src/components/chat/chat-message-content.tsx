@@ -1,6 +1,6 @@
 'use client';
 
-import { Message } from 'ai/react';
+import type { UIMessage } from 'ai';
 import Markdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import {
@@ -12,12 +12,7 @@ import { ChevronDown, ChevronUp } from 'lucide-react';
 import { useState } from 'react';
 
 export type ChatMessageContentProps = {
-  message: Message;
-  isLast?: boolean;
-  isLoading?: boolean;
-  reload?: () => Promise<string | null | undefined>;
-  addToolResult?: (args: { toolCallId: string; result: string }) => void;
-  skipToolRendering?: boolean;
+  message: UIMessage;
 };
 
 const CodeBlock = ({ content }: { content: string }) => {
